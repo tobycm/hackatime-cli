@@ -1,6 +1,6 @@
 # hackatime-cli
 
-Fire terminal-craft ysws submission
+Fire terminal-craft ysws submission. Demo: [https://asciinema.org/a/708933](https://asciinema.org/a/708933)
 
 ## Installation
 
