@@ -6,7 +6,7 @@ export interface WakatimeConfig<Filled extends boolean = false> {
   apiUrl: Filled extends true ? string : string | undefined;
 }
 
-export default function loadWakatimeConfig(configPath: string = `${import.meta.env.HOME}/.wakatime.cfg`): WakatimeConfig {
+export default function loadWakatimeConfig(configPath: string = `${process.env.HOME}/.wakatime.cfg`): WakatimeConfig {
   const config = parse(readFileSync(configPath, "utf-8"));
   return {
     apiKey: config.settings.api_key,
