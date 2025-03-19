@@ -1,5 +1,5 @@
-import { Text } from "ink";
-import { useEffect, useState } from "react";
+import { Text, useInput } from "ink";
+import { useEffect, useRef, useState } from "react";
 
 export default function FunRunningAnimation({
   maxDots,
@@ -16,10 +16,19 @@ export default function FunRunningAnimation({
 
   const [dots, setDots] = useState(0);
 
+  const pause = useRef(false);
+
+  useInput((input, key) => {
+    if (input !== " " && input !== "k") return;
+    pause.current = !pause.current;
+  });
+
   useEffect(() => {
     setDots(0);
 
     const interval = setInterval(() => {
+      if (pause.current) return;
+
       setDots((dots) => {
         dots = dots + 1;
         if (dots > maxDots) {
@@ -33,8 +42,13 @@ export default function FunRunningAnimation({
     return () => clearInterval(interval);
   }, [maxDots, speed]);
 
-  const dotsRender = "-".repeat(Math.abs(dots));
-  const spaceRender = dots < 0 ? " ".repeat(dots + maxDots) : "";
+  let dotsRender = "";
+  let spaceRender = "";
+
+  try {
+    dotsRender = "-".repeat(Math.abs(dots));
+    spaceRender = dots < 0 ? " ".repeat(dots + maxDots) : "";
+  } catch (error) {}
 
   return (
     <Text color={color}>

@@ -1,7 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
-import { Box, Newline, Text } from "ink";
+import { Box, Text } from "ink";
 import FunRunningAnimation from "../components/FunRunningAnimation";
 import Loading from "../components/Loading";
+import ProjectsCoded from "../components/ProjectsCoded";
+import StatusBarWithText from "../components/StatusBarWithText";
+import { EntryColors, Thresholds } from "../constants";
 import { useAppContext } from "../contexts/AppContext";
 import { timeAgo } from "../utils";
 
@@ -44,12 +47,24 @@ export default function Dashboard() {
     queryFn: async () => (await wakatime.getStatistics("current", "month")).data,
   });
 
+  const statusBar = useQuery({
+    queryKey: ["summaries", "today", wakatimeConfig.apiUrl, wakatimeConfig.apiKey],
+    queryFn: async () => (await wakatime.getSummaries("current", "today")).data,
+  });
+
+  const last30DaysSummaries = useQuery({
+    queryKey: ["summaries", "last_30_days", wakatimeConfig.apiUrl, wakatimeConfig.apiKey],
+    queryFn: () => wakatime.getSummaries("current", "last_30_days"),
+  });
+
   if (user.isError) return <Text>Error: {String(user.error)}</Text>;
   if (allTimeSinceToday.isError) return <Text>Error: {String(allTimeSinceToday.error)}</Text>;
   if (projects.isError) return <Text>Error: {String(projects.error)}</Text>;
   if (todayStats.isError) return <Text>Error: {String(todayStats.error)}</Text>;
   if (weekStats.isError) return <Text>Error: {String(weekStats.error)}</Text>;
   if (monthStats.isError) return <Text>Error: {String(monthStats.error)}</Text>;
+  if (statusBar.isError) return <Text>Error: {String(statusBar.error)}</Text>;
+  if (last30DaysSummaries.isError) return <Text>Error: {String(last30DaysSummaries.error)}</Text>;
 
   if (!user.isFetched || !user.data) {
     return <Loading />;
@@ -85,24 +100,14 @@ export default function Dashboard() {
             <Box flexDirection={isMobile ? "column" : "row"} flexWrap="wrap">
               <Text>You have coded for </Text>
               <Text>
-                <Text
-                  color={
-                    todayStats.data.total_seconds < 60 * 5 ? "redBright" : todayStats.data.total_seconds < 60 * 15 ? "yellowBright" : "greenBright"
-                  }>
+                <Text color={Thresholds.getColor(todayStats.data.total_seconds, Thresholds.today) ?? "redBright"}>
                   {todayStats.data.human_readable_total}
                 </Text>{" "}
                 today{weekStats.data && ", "}
               </Text>
               {weekStats.data && (
                 <Text>
-                  <Text
-                    color={
-                      todayStats.data.total_seconds < 60 * 5 * 5
-                        ? "redBright"
-                        : todayStats.data.total_seconds < 60 * 15 * 5
-                        ? "yellowBright"
-                        : "greenBright"
-                    }>
+                  <Text color={Thresholds.getColor(weekStats.data.total_seconds, Thresholds.week) ?? "redBright"}>
                     {weekStats.data.human_readable_total}
                   </Text>{" "}
                   this week{monthStats.data && ", "}
@@ -110,14 +115,7 @@ export default function Dashboard() {
               )}
               {monthStats.data && (
                 <Text>
-                  <Text
-                    color={
-                      todayStats.data.total_seconds < 60 * 5 * 20
-                        ? "redBright"
-                        : todayStats.data.total_seconds < 60 * 15 * 20
-                        ? "yellowBright"
-                        : "greenBright"
-                    }>
+                  <Text color={Thresholds.getColor(monthStats.data.total_seconds, Thresholds.month) ?? "redBright"}>
                     {monthStats.data.human_readable_total}
                   </Text>{" "}
                   this month
@@ -126,7 +124,6 @@ export default function Dashboard() {
             </Box>
           )}
         </Box>
-        <Box width={isMobile ? "0%" : "5%"} />
         <Box
           display="flex"
           marginTop={isMobile ? 1 : 0}
@@ -140,8 +137,7 @@ export default function Dashboard() {
             width="100%"
             justifyContent={isMobile ? "flex-start" : "flex-end"}>
             <Text>
-              Last heartbeat:{" "}
-              <Text color={timeDelta > 1000 * 60 * 60 * 18 ? "red" : timeDelta > 1000 * 60 * 60 ? "yellow" : "green"}>{timeAgo(lastHeartbeat)}</Text>{" "}
+              Last heartbeat: <Text color={Thresholds.getColor(timeDelta, Thresholds.lastHeartbeat)}>{timeAgo(lastHeartbeat)}</Text>{" "}
             </Text>
             <Text>
               <Text color="gray">({lastHeartbeat.toLocaleString()})</Text>
@@ -168,64 +164,31 @@ export default function Dashboard() {
         </Box>
       </Box>
 
-      <Box marginTop={1} flexDirection="column">
-        <Text>
-          Projects coded <Text color="greenBright">last 24 hours</Text>:
-          <Newline />
-        </Text>
+      <Box flexDirection={isMobile ? "column" : "row"} justifyContent="space-between" width="100%">
+        <Box width={isMobile ? "100%" : "35%"}>
+          <ProjectsCoded />
+        </Box>
 
-        {!todayStats.data ? (
-          <Loading />
-        ) : (
-          todayStats.data.projects.map((project) => (
-            <Text key={project.name}>
-              <Text color={project.total_seconds < 60 * 5 ? "redBright" : project.total_seconds < 60 * 15 ? "yellowBright" : "greenBright"}>
-                {project.name}
-              </Text>
-              : {project.text}
-            </Text>
-          ))
-        )}
-      </Box>
-
-      <Box marginTop={1} flexDirection="column">
-        <Text>
-          Projects coded <Text color="greenBright">this week</Text>:
-          <Newline />
-        </Text>
-
-        {!weekStats.data ? (
-          <Loading />
-        ) : (
-          weekStats.data.projects.map((project) => (
-            <Text key={project.name}>
-              <Text color={project.total_seconds < 60 * 5 ? "redBright" : project.total_seconds < 60 * 15 ? "yellowBright" : "greenBright"}>
-                {project.name}
-              </Text>
-              : {project.text}
-            </Text>
-          ))
-        )}
-      </Box>
-
-      <Box marginTop={1} flexDirection="column">
-        <Text>
-          Projects coded <Text color="greenBright">this month</Text>:
-          <Newline />
-        </Text>
-
-        {!monthStats.data ? (
-          <Loading />
-        ) : (
-          monthStats.data.projects.map((project) => (
-            <Text key={project.name}>
-              <Text color={project.total_seconds < 60 * 10 ? "redBright" : project.total_seconds < 60 * 25 ? "yellowBright" : "greenBright"}>
-                {project.name}
-              </Text>
-              : {project.text}
-            </Text>
-          ))
-        )}
+        <Box width={isMobile ? "96%" : "60%"} flexDirection="column">
+          {statusBar.data && (
+            <Box margin={1} width="100%" flexDirection="column">
+              {statusBar.data[0].categories && (
+                <StatusBarWithText text="Categories:" data={statusBar.data[0].categories} colorMapping={EntryColors.category} />
+              )}
+              {statusBar.data[0].branches && <StatusBarWithText text="Branches:" data={statusBar.data[0].branches} />}
+              {statusBar.data[0].editors && <StatusBarWithText text="Editors:" data={statusBar.data[0].editors} colorMapping={EntryColors.editor} />}
+              {statusBar.data[0].languages && (
+                <StatusBarWithText text="Languages:" data={statusBar.data[0].languages} colorMapping={EntryColors.language} />
+              )}
+              {statusBar.data[0].operating_systems && (
+                <StatusBarWithText text="Operating Systems:" data={statusBar.data[0].operating_systems} colorMapping={EntryColors.os} />
+              )}
+              {statusBar.data[0].machines && <StatusBarWithText text="Machines:" data={statusBar.data[0].machines} />}
+              {statusBar.data[0].projects && <StatusBarWithText text="Projects:" data={statusBar.data[0].projects} />}
+            </Box>
+          )}
+          {/* {last30DaysSummaries.data && <SummaryChart data={last30DaysSummaries.data} />} */}
+        </Box>
       </Box>
     </>
   );
