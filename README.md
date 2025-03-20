@@ -41,19 +41,19 @@ bun build --compile --outfile=hackatime-cli --minify index.tsx
 For Windows:
 
 ```sh
-bun build --compile --outfile=hackatime-cli --minify --target=bun-windows-amd64 index.tsx
+bun build --compile --outfile=hackatime-cli-windows-amd64 --minify --target=bun-windows-amd64 index.tsx
 ```
 
 For Linux:
 
 ```sh
-bun build --compile --outfile=hackatime-cli --minify --target=bun-linux-amd64 index.tsx
+bun build --compile --outfile=hackatime-cli-linux-amd64 --minify --target=bun-linux-amd64 index.tsx
 ```
 
 For MacOS:
 
 ```sh
-bun build --compile --outfile=hackatime-cli --minify --target=bun-darwin-arm64 index.tsx
+bun build --compile --outfile=hackatime-cli-darwin-arm64 --minify --target=bun-darwin-arm64 index.tsx
 ```
 
 ## Development
